@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <title>Inicio</title>
+</head>
+
+<body>
+    <!-- Tabla -->
+    <a href="home/create" class="btn btn-primary m-2">Crear registro</a>
+    <h1>Bienvenido, {{ current_user.fullname }}</h1>
+    <a class="btn btn-secondary" href="{{ url_for('logout') }}">Logout</a>
+    <table class="table table-light m-2">
+        <thead class="thead-light">
+            <tr>
+                <th>#</th>
+                <th>FOTO</th>
+                <th>PRODUCTO</th>
+                <th>PRECIO</th>
+                <th>ACCIONES</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto[0] }}</td>
+                <td><img class="img-thumbnail" width="100" src="{{ url_for("uploads",nombreFoto =  producto[3]) }}"></td>
+                <td>{{ producto[1] }}</td>
+                <td>{{ producto[2] }}</td>
+                <td>
+                    <a class="btn btn-warning" style="color:#fff;" href="/home/edit/{{ producto[0] }}">Editar</a>
+                    <a class="btn btn-danger" onclick="return confirm('¿Deseas borrar al usuario?')" href="home/destroy/{{ producto[0] }}">Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+
+</html>
