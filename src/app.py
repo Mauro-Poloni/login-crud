@@ -80,7 +80,7 @@ def logout():
 # Mostrar datos : Show
 
 @app.route('/home')
-
+@login_required
 def home():
     cursor = db.connection.cursor()
     cursor.execute("SELECT * FROM `productos`")
@@ -93,7 +93,7 @@ def home():
 # Eliminar datos
 
 @app.route('/home/destroy/<string:id>', methods = ['GET'])
-
+@login_required
 def destroy(id):
 
     cursor = db.connection.cursor()
@@ -110,7 +110,7 @@ def destroy(id):
 # Editar datos
 
 @app.route('/home/edit/<string:id>', methods = ['GET'])
-
+@login_required
 def edit(id):
 
     cursor = db.connection.cursor()
@@ -122,6 +122,7 @@ def edit(id):
 # Actualizar datos
 
 @app.route('/update', methods=['POST'])
+@login_required
 def update():
     # Guardar en variables los datos del form
     _nombre = request.form['txtNombre']
@@ -165,6 +166,7 @@ def update():
 # Crear datos del CRUD
 
 @app.route('/home/create')
+@login_required
 
 def create():
     return render_template('crud/create.html')
@@ -173,6 +175,7 @@ def create():
 # txtNombre - txtPrecio - txtFoto
 
 @app.route('/store', methods=['POST'])
+@login_required
 def storage():
 
     # Guardar en variables los datos del form
