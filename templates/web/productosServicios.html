@@ -134,15 +134,15 @@
           {% for producto in productos %}
           <div class="col" style="display:flex;justify-content:space-evenly;">
             <div class="card h-100 shadow estilos-card w-75">
-              <img src="{{ url_for("uploads",nombreFoto=producto[1])}}" class="card-img-top estilos-fondo" style="background-size: cover;max-height:200px !important;" />  
+              <img src="{{ url_for("uploads",nombreFoto=producto[1])}}" class="img-fluid rounded-start" style="background-size: cover;max-height:300px !important;" />  
               <div class="card-body">
-                <h4 class="card-title">{{ producto[2] }}</h4>
-                <p class="card-text">
+                <h4 class="card-title" style="text-align: center;">{{ producto[2] }}</h4>
+                <p class="card-text" style="text-align: center;">
                   {{ producto[3] }} - {{ producto[4] }} - {{ producto[5] }}
                 </p>
               </div>
               <div class="card-footer estilos-footer-card">
-                <div class="float-start">
+                <div style="text-align: center;">
                   <h4>${{ producto[6] }}</h4>
                 </div>
                 <div class="float-end"></div>
