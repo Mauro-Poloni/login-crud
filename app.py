@@ -24,7 +24,7 @@ db = MySQL(app)
 
 # Referencia a carpeta de fotos
 
-CARPETA = os.path.join("uploads")
+CARPETA = os.path.join("img")
 app.config['CARPETA'] = CARPETA
 
 # Mostrar fotos en el index
@@ -41,9 +41,30 @@ def load_user(id):
     return ModelUser.get_by_id(db, id)
 
 
+# @app.route('/')
+# def index():
+#     return redirect(url_for('login'))
+
 @app.route('/')
-def index():
-    return redirect(url_for('login'))
+def web():
+    return render_template('web/index.html')
+
+@app.route('/Acerca-de')
+def acerca():
+    return render_template('web/acercaDe.html')
+
+@app.route('/productos-y-servicios')
+def productos():
+    cursor = db.connection.cursor()
+    cursor.execute("SELECT productos.id,productos.foto,productos.nombre,productos.descripcion,marca.marca,familia.familia,productos.precio,productos.stock FROM marca JOIN productos ON marca.id = productos.marca_id JOIN familia ON productos.familia_id = familia.id")
+    productos = cursor.fetchall()
+    db.connection.commit()
+    cursor.close()
+    return render_template('web/productosServicios.html', productos = productos)
+
+@app.route('/contacto')
+def contacto():
+    return render_template('web/contacto.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -58,10 +79,10 @@ def login():
                 login_user(logged_user)
                 return redirect(url_for('home'))
             else:
-                flash("Invalid password...")
+                flash("Contraseña invalida...")
                 return render_template('auth/login.html')
         else:
-            flash("User not found...")
+            flash("Usuario no encontrado...")
             return render_template('auth/login.html')
     else:
         return render_template('auth/login.html')
@@ -83,12 +104,12 @@ def logout():
 @login_required
 def home():
     cursor = db.connection.cursor()
-    cursor.execute("SELECT * FROM `productos`")
+    cursor.execute("SELECT productos.id,productos.foto,productos.nombre,productos.descripcion,marca.marca,familia.familia,productos.precio,productos.stock FROM marca JOIN productos ON marca.id = productos.marca_id JOIN familia ON productos.familia_id = familia.id")
     productos = cursor.fetchall()
     db.connection.commit()
     cursor.close()
 
-    return render_template('crud/index.html', productos = productos)
+    return render_template('crud/index.html',productos = productos)
 
 # Eliminar datos
 
@@ -102,7 +123,7 @@ def destroy(id):
 
     cursor.execute("SELECT foto FROM productos WHERE id = %s", (id))
     fila = cursor.fetchall()
-    os.remove(os.path.join("src/uploads", fila[0][0]))
+    os.remove(os.path.join("img/", fila[0][0]))
     cursor.execute("DELETE FROM productos WHERE id=%s",(id))
     db.connection.commit()
     return redirect("/home")
@@ -113,11 +134,26 @@ def destroy(id):
 @login_required
 def edit(id):
 
-    cursor = db.connection.cursor()
-    cursor.execute("SELECT * FROM productos WHERE id = %s", (id))
-    productos = cursor.fetchall()
+    cursor1 = db.connection.cursor()
+    cursor1.execute("SELECT productos.id,productos.nombre,productos.descripcion,productos.marca_id,marca.marca,productos.familia_id,familia.familia,productos.precio,productos.stock,productos.foto FROM marca JOIN productos ON marca.id = productos.marca_id JOIN familia ON productos.familia_id = familia.id WHERE productos.id = %s", (id))
+
+    cursor2 = db.connection.cursor()
+    cursor2.execute("SELECT * FROM `familia`")
+
+    cursor3 = db.connection.cursor()
+    cursor3.execute("SELECT * FROM `marca`")
+
+    productos = cursor1.fetchall()
+    familias = cursor2.fetchall()
+    marcas = cursor3.fetchall()
+
     db.connection.commit()
-    return render_template('crud/edit.html', productos = productos)
+
+    cursor1.close()
+    cursor2.close()
+    cursor3.close()
+
+    return render_template('crud/edit.html', productos = productos, familias = familias, marcas = marcas)
 
 # Actualizar datos
 
@@ -126,25 +162,35 @@ def edit(id):
 def update():
     # Guardar en variables los datos del form
     _nombre = request.form['txtNombre']
+    _descripcion = request.form['txtDescripcion']
     _precio = request.form['txtPrecio']
+    _stock = request.form['txtStock']
     _foto = request.files['txtFoto']
+    _marca = request.form['txtMarca']
+    _familia = request.form['txtFamilia']
     id = request.form['txtID']
 
     # Modifico solo nombre y precio
     cursor = db.connection.cursor()
-    cursor.execute("UPDATE `productos` SET `nombre` = %s,`precio` = %s WHERE id = %s;", (_nombre, _precio, id))
+    cursor.execute("UPDATE `productos` SET `nombre` = %s,`descripcion` = %s,`precio` = %s,`stock` = %s,`marca_id` = %s,`familia_id` = %s WHERE id = %s;", (_nombre, _descripcion, _precio, _stock, _marca,_familia, id))
 
     # Traer datos del form
 
-    datos = (_nombre,_precio,id)
+    datos = (_nombre,_descripcion,_precio,_stock,_precio,_marca,_familia,id)
 
         # Modificar foto para poder actualizarla #
+
+        # Validaciones
+
+    if _foto == '':
+        flash('recuerda llenar los datos de los campos')
+        return redirect(url_for('edit'))
 
     now = datetime.now()
     tiempo = now.strftime("%Y%H%M%S")
     if _foto.filename != '' :
         nuevoNombreFoto = tiempo + _foto.filename
-        _foto.save("src/uploads/" + nuevoNombreFoto)
+        _foto.save("img/" + nuevoNombreFoto)
 
     # Traer esa foto
 
@@ -153,7 +199,7 @@ def update():
 
     # Remover la foto
 
-    os.remove(os.path.join('src/uploads', fila[0][0]))
+    os.remove(os.path.join('img/', fila[0][0]))
 
     # actualizar con nueva foto
     cursor.execute("UPDATE productos SET foto = %s WHERE id = %s", (nuevoNombreFoto, id))
@@ -169,7 +215,17 @@ def update():
 @login_required
 
 def create():
-    return render_template('crud/create.html')
+    cursor1 = db.connection.cursor()
+    cursor1.execute("SELECT * FROM `marca`")
+    cursor2 = db.connection.cursor()
+    cursor2.execute("SELECT * FROM `familia`")
+    marcas = cursor1.fetchall()
+    familias = cursor2.fetchall()
+    db.connection.commit()
+    cursor1.close()
+    cursor2.close()
+
+    return render_template('crud/create.html', marcas = marcas, familias = familias)
 
 # Guardar los datos del crud
 # txtNombre - txtPrecio - txtFoto
@@ -180,12 +236,16 @@ def storage():
 
     # Guardar en variables los datos del form
     _nombre = request.form['txtNombre']
+    _descripcion = request.form['txtDescripcion']
     _precio = request.form['txtPrecio']
+    _stock = request.form['txtStock']
     _foto = request.files['txtFoto']
+    _marca = request.form['txtMarca']
+    _familia = request.form['txtFamilia'] 
 
     # Validaciones
 
-    if _nombre == '' or _precio == '' or _foto == '' :
+    if _nombre == '' or _descripcion == '' or _precio == '' or _stock == '' or _foto == '' or _marca == '' or _familia == '':
         flash('recuerda llenar los datos de los campos')
         return redirect(url_for('create'))
 
@@ -196,11 +256,11 @@ def storage():
 
     if _foto.filename != '' :
         nuevoNombreFoto = tiempo + _foto.filename
-        _foto.save("src/uploads/" + nuevoNombreFoto)
+        _foto.save("img//" + nuevoNombreFoto)
 
     # Consulta de insertar
     cur = db.connection.cursor()
-    cur.execute("INSERT INTO `productos` (`id`, `nombre`, `precio`, `foto`) VALUES (NULL, %s, %s, %s)", (_nombre, _precio, nuevoNombreFoto))
+    cur.execute("INSERT INTO `productos` (`id`, `nombre`, `descripcion`,`precio`,`stock`,`foto`,`marca_id`, `familia_id`) VALUES (NULL, %s, %s, %s, %s, %s, %s, %s)", (_nombre, _descripcion, _precio, _stock, nuevoNombreFoto, _marca,_familia))
     db.connection.commit()
 
     return redirect('/home')
