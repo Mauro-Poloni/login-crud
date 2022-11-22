@@ -2,8 +2,8 @@ Login hecho en python con el framework Flask:
 
 Instalación:
 
-versión de python: 3.8.10
-
+versión de python: 3.8.10 (es necesario tener esta version)
+ 
 1-Instalar Xampp <br>
 2-Exportar Base de datos: "python_login.sql" <br>
 3-Clonar proyecto <br>
